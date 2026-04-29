@@ -1,32 +1,7 @@
 # URL Metadata Service
-
-A lightweight FastAPI service to fetch, store, and serve metadata for any URL. It captures HTTP headers, cookies, and page source, and persists them in MongoDB with async processing for better performance.
-
 ---
-
-## Overview
 
 This service allows you to submit a URL and retrieve its metadata on demand. If the data isn’t available yet, the request is processed in the background without blocking the API.
-
----
-
-## Key Features
-
-* Fetch HTTP headers, cookies, and HTML content from URLs
-* Store and query metadata using MongoDB
-* Asynchronous background processing for non-blocking requests
-* REST API with built-in Swagger documentation
-* Fully containerized with Docker
-
----
-
-## Tech Stack
-
-* **Backend:** FastAPI
-* **Database:** MongoDB
-* **Async Processing:** asyncio
-* **Containerization:** Docker, Docker Compose
-* **Testing:** Pytest
 
 ---
 
@@ -129,20 +104,6 @@ app/
 | MONGODB_DB_NAME | url_metadata              | Database name             |
 | REQUEST_TIMEOUT | 15.0                      | Request timeout (seconds) |
 
----
 
-## How It Works
 
-1. Client submits a URL
-2. Service checks if metadata exists
-3. If not, processing starts asynchronously
-4. Data is stored in MongoDB
-5. Client retrieves results when ready
 
----
-
-## Notes
-
-* URLs are normalized before storage
-* Duplicate requests are handled efficiently
-* Background processing keeps APIs responsive
