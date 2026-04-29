@@ -5,26 +5,6 @@ This service allows you to submit a URL and retrieve its metadata on demand. If 
 
 ---
 
-## Key Features
-
-* Fetch HTTP headers, cookies, and HTML content from URLs
-* Store and query metadata using MongoDB
-* Asynchronous background processing for non-blocking requests
-* REST API with built-in Swagger documentation
-* Fully containerized with Docker
-
----
-
-## Tech Stack
-
-* **Backend:** FastAPI
-* **Database:** MongoDB
-* **Async Processing:** asyncio
-* **Containerization:** Docker, Docker Compose
-* **Testing:** Pytest
-
----
-
 ## Getting Started
 
 ### Prerequisites
