@@ -1,7 +1,7 @@
 import asyncio
 import logging
-from datetime import datetime
 
+from app.models.metadata import MetadataRecord
 from app.services import collector, database
 
 
@@ -15,16 +15,14 @@ async def _collect_and_store(url: str) -> None:
     try:
         data = await collector.fetch_metadata(url)
 
-        record = {
-            "url": url,
-            "headers": data["headers"],
-            "cookies": data["cookies"],
-            "page_source": data["page_source"],
-            "collected_at": datetime.utcnow(),
-            "status": "completed",
-        }
+        record = MetadataRecord(
+            url=url,
+            headers=data["headers"],
+            cookies=data["cookies"],
+            page_source=data["page_source"],
+        )
 
-        await database.upsert_record(record)
+        await database.upsert_record(record.model_dump())
         logger.info("Background collection completed for %s", url)
 
     except Exception:

@@ -1,5 +1,4 @@
 import logging
-from datetime import datetime
 
 from fastapi import APIRouter, HTTPException, status
 from fastapi.responses import JSONResponse
@@ -7,7 +6,9 @@ from fastapi.responses import JSONResponse
 from app.models.metadata import (
     AcceptedResponse,
     CreatedResponse,
+    MetadataRecord,
     MetadataResponse,
+    PendingRecord,
     URLRequest,
 )
 from app.services import collector, database
@@ -39,17 +40,15 @@ async def create_metadata(body: URLRequest):
             detail=f"Failed to fetch URL: {exc}",
         )
 
-    record = {
-        "url": url,
-        "headers": data["headers"],
-        "cookies": data["cookies"],
-        "page_source": data["page_source"],
-        "collected_at": datetime.utcnow(),
-        "status": "completed",
-    }
+    record = MetadataRecord(
+        url=url,
+        headers=data["headers"],
+        cookies=data["cookies"],
+        page_source=data["page_source"],
+    )
 
     try:
-        await database.upsert_record(record)
+        await database.upsert_record(record.model_dump())
     except Exception as exc:
         logger.exception("Database write failed for %s", url)
         raise HTTPException(
@@ -93,13 +92,8 @@ async def get_metadata(url: str):
     # Cache miss — enqueue background collection and return 202.
     if not background.is_pending(url):
         try:
-            await database.upsert_record(
-                {
-                    "url": url,
-                    "status": "pending",
-                    "collected_at": datetime.utcnow(),
-                }
-            )
+            pending = PendingRecord(url=url)
+            await database.upsert_record(pending.model_dump())
         except Exception:
             logger.exception("Failed to insert pending record for %s", url)
 
