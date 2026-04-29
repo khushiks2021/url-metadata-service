@@ -2,6 +2,7 @@ import logging
 
 from fastapi import APIRouter, HTTPException, status
 from fastapi.responses import JSONResponse
+from pydantic import HttpUrl
 
 from app.models.metadata import (
     AcceptedResponse,
@@ -68,7 +69,8 @@ async def create_metadata(body: URLRequest):
         202: {"model": AcceptedResponse, "description": "Collection queued."},
     },
 )
-async def get_metadata(url: str):
+async def get_metadata(url: HttpUrl):
+    url=str(url)
     """Look up stored metadata for a URL. If the record does not exist,
     return 202 and trigger background collection."""
     try:

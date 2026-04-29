@@ -1,5 +1,4 @@
 import asyncio
-from unittest.mock import AsyncMock, patch
 
 import pytest
 import pytest_asyncio
@@ -8,15 +7,7 @@ from mongomock_motor import AsyncMongoMockClient
 from app.services import database
 
 
-@pytest.fixture(scope="session")
-def event_loop():
-    """Use a single event loop for the entire test session."""
-    loop = asyncio.new_event_loop()
-    yield loop
-    loop.close()
-
-
-@pytest_asyncio.fixture(autouse=True)
+@pytest_asyncio.fixture(autouse=True, loop_scope="session")
 async def mock_db():
     """Replace the real MongoDB connection with an in-memory mock."""
     client = AsyncMongoMockClient()
