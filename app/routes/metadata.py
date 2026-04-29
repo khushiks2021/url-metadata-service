@@ -108,7 +108,10 @@ async def get_metadata(url: HttpUrl):
         and not background.is_pending(url)
     ):
         # retry after cooldown
-        age = (datetime.now(UTC) - record["collected_at"]).total_seconds()
+        collected=record["collected_at"]
+        if collected.tzinfo is None:
+            collected = collected.replace(tzinfo=UTC)
+        age = (datetime.now(UTC) - collected).total_seconds()
         if age > background.RETRY_COOLDOWN:
             should_enqueue = True
 
