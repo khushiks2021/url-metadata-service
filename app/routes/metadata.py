@@ -70,9 +70,10 @@ async def create_metadata(body: URLRequest):
     },
 )
 async def get_metadata(url: HttpUrl):
-    url=str(url)
     """Look up stored metadata for a URL. If the record does not exist,
     return 202 and trigger background collection."""
+    url = str(url)
+
     try:
         record = await database.find_by_url(url)
     except Exception as exc:
