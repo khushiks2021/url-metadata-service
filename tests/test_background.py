@@ -1,5 +1,6 @@
 import asyncio
-from datetime import datetime
+from datetime import datetime, UTC
+datetime.now(UTC)
 from unittest.mock import AsyncMock, patch
 
 import pytest
@@ -35,7 +36,7 @@ class TestBackgroundWorker:
             {
                 "url": "https://fail-bg.test",
                 "status": "pending",
-                "collected_at": datetime.utcnow(),
+                "collected_at": datetime.now(UTC),
             }
         )
 
@@ -47,7 +48,8 @@ class TestBackgroundWorker:
             await background._collect_and_store("https://fail-bg.test")
 
         record = await database.find_by_url("https://fail-bg.test")
-        assert record is None
+        assert record is not None
+        assert record["status"] == "failed"
 
     async def test_enqueue_prevents_duplicate_tasks(self):
         background._pending_tasks.clear()
@@ -74,3 +76,24 @@ class TestBackgroundWorker:
             )
 
         background._pending_tasks.clear()
+
+    async def test_collect_and_store_marks_failed_on_error(self):
+        await database.upsert_record(
+            {
+                "url": "https://fail-bg.test",
+                "status": "pending",
+                "collected_at": datetime.now(UTC),
+            }
+        )
+
+        with patch(
+            "app.worker.background.collector.fetch_metadata",
+            new_callable=AsyncMock,
+            side_effect=Exception("timeout"),
+        ):
+            await background._collect_and_store("https://fail-bg.test")
+
+        record = await database.find_by_url("https://fail-bg.test")
+
+        assert record is not None
+        assert record["status"] == "failed"

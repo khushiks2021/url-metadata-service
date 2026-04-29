@@ -1,4 +1,5 @@
-from datetime import datetime
+from datetime import datetime, UTC
+datetime.now(UTC)
 from pydantic import BaseModel, Field, HttpUrl
 
 
@@ -13,7 +14,7 @@ class MetadataRecord(BaseModel):
     headers: dict[str, str]
     cookies: dict[str, str]
     page_source: str
-    collected_at: datetime = Field(default_factory=datetime.utcnow)
+    collected_at: datetime = Field(default_factory=lambda: datetime.now(UTC))
     status: str = "completed"
 
 
@@ -44,4 +45,4 @@ class PendingRecord(BaseModel):
     """A pending placeholder inserted during background collection."""
     url: str
     status: str = "pending"
-    collected_at: datetime = Field(default_factory=datetime.utcnow)
+    collected_at: datetime = Field(default_factory=lambda: datetime.now(UTC))

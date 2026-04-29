@@ -1,4 +1,6 @@
 import logging
+from datetime import datetime, UTC
+datetime.now(UTC)
 
 from fastapi import APIRouter, HTTPException, status
 from fastapi.responses import JSONResponse
@@ -92,14 +94,29 @@ async def get_metadata(url: HttpUrl):
             collected_at=record["collected_at"],
         )
 
-    # Cache miss — enqueue background collection and return 202.
-    if not background.is_pending(url):
+    # Decide whether to enqueue a new background task
+    should_enqueue = False
+
+    if not record and not background.is_pending(url):
+        # Never seen this URL before
         try:
             pending = PendingRecord(url=url)
             await database.upsert_record(pending.model_dump())
         except Exception:
             logger.exception("Failed to insert pending record for %s", url)
+        should_enqueue = True
 
+    elif (
+        record
+        and record.get("status") == "failed"
+        and not background.is_pending(url)
+    ):
+        # Previously failed — only retry after cooldown
+        age = (datetime.utcnow() - record["collected_at"]).total_seconds()
+        if age > background.RETRY_COOLDOWN:
+            should_enqueue = True
+
+    if should_enqueue:
         background.enqueue(url)
 
     return JSONResponse(

@@ -1,5 +1,7 @@
 import asyncio
 import logging
+from datetime import datetime, UTC
+datetime.now(UTC)
 
 from app.models.metadata import MetadataRecord
 from app.services import collector, database
@@ -8,6 +10,9 @@ from app.services import collector, database
 logger = logging.getLogger(__name__)
 
 _pending_tasks: dict[str, asyncio.Task] = {}
+
+# Don't retry failed URLs for at least this many seconds
+RETRY_COOLDOWN = 60
 
 
 async def _collect_and_store(url: str) -> None:
@@ -28,11 +33,17 @@ async def _collect_and_store(url: str) -> None:
     except Exception:
         logger.exception("Background collection failed for %s", url)
 
+        # Mark as failed so we don't retry on every GET
         try:
-            collection = database.get_collection()
-            await collection.delete_one({"url": url, "status": "pending"})
+            await database.upsert_record(
+                {
+                    "url": url,
+                    "status": "failed",
+                    "collected_at": datetime.now(UTC),
+                }
+            )
         except Exception:
-            logger.exception("Failed to clean up pending record for %s", url)
+            logger.exception("Failed to update record for %s", url)
 
     finally:
         _pending_tasks.pop(url, None)
