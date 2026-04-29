@@ -13,7 +13,7 @@ _db: AsyncIOMotorDatabase | None = None
 
 
 async def connect() -> None:
-    """Establish connection to MongoDB and create indexes."""
+    """Initialize MongoDB client and ensure indexes."""
     global _client, _db
 
     _client = AsyncIOMotorClient(
@@ -23,11 +23,11 @@ async def connect() -> None:
     _db = _client[settings.mongodb_db_name]
 
     await _db.metadata.create_index("url", unique=True)
-    logger.info("Connected to MongoDB and ensured indexes.")
+    logger.info("Connected to MongoDB.")
 
 
 async def disconnect() -> None:
-    """Close the MongoDB connection."""
+    """Close MongoDB client."""
     global _client, _db
 
     if _client:
@@ -38,14 +38,14 @@ async def disconnect() -> None:
 
 
 def get_collection():
-    """Return the metadata collection. Raises if not connected."""
+    """Return metadata collection; requires active connection."""
     if _db is None:
         raise RuntimeError("Database not connected. Call connect() first.")
     return _db.metadata
 
 
 async def find_by_url(url: str) -> dict[str, Any] | None:
-    """Look up a metadata record by URL."""
+    """Fetch a record by URL."""
     return await get_collection().find_one(
         {"url": url},
         {"_id": 0},
@@ -53,7 +53,7 @@ async def find_by_url(url: str) -> dict[str, Any] | None:
 
 
 async def upsert_record(record: dict[str, Any]) -> None:
-    """Insert or replace a metadata record keyed by URL."""
+    """Insert or update record by URL."""
     await get_collection().replace_one(
         {"url": record["url"]},
         record,

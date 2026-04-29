@@ -1,15 +1,14 @@
 from datetime import datetime, UTC
-datetime.now(UTC)
 from pydantic import BaseModel, Field, HttpUrl
 
 
 class URLRequest(BaseModel):
-    """Request body for submitting a URL for metadata collection."""
+    # incoming request body
     url: HttpUrl
 
 
 class MetadataRecord(BaseModel):
-    """Full metadata record stored in the database."""
+    # stored record in DB
     url: str
     headers: dict[str, str]
     cookies: dict[str, str]
@@ -19,7 +18,7 @@ class MetadataRecord(BaseModel):
 
 
 class MetadataResponse(BaseModel):
-    """Response returned when metadata is available."""
+    # response when data is ready
     url: str
     headers: dict[str, str]
     cookies: dict[str, str]
@@ -28,21 +27,21 @@ class MetadataResponse(BaseModel):
 
 
 class AcceptedResponse(BaseModel):
-    """Response returned when metadata collection is queued."""
+    # returned when background job is triggered
     url: str
     status: str = "accepted"
     message: str = "Metadata collection has been queued. Retry shortly."
 
 
 class CreatedResponse(BaseModel):
-    """Response returned after successful POST."""
+    # returned after POST success
     url: str
     status: str = "created"
     message: str = "Metadata collected and stored successfully."
 
 
 class PendingRecord(BaseModel):
-    """A pending placeholder inserted during background collection."""
+    # temporary entry while processing
     url: str
     status: str = "pending"
     collected_at: datetime = Field(default_factory=lambda: datetime.now(UTC))

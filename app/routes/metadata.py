@@ -1,6 +1,5 @@
 import logging
 from datetime import datetime, UTC
-datetime.now(UTC)
 
 from fastapi import APIRouter, HTTPException, status
 from fastapi.responses import JSONResponse
@@ -30,8 +29,7 @@ router = APIRouter(prefix="/metadata", tags=["metadata"])
     summary="Collect and store metadata for a URL",
 )
 async def create_metadata(body: URLRequest):
-    """Fetch headers, cookies, and page source for the given URL
-    and store the result in MongoDB."""
+    """Fetch metadata for a URL and persist it."""
     url = str(body.url)
 
     try:
@@ -72,8 +70,7 @@ async def create_metadata(body: URLRequest):
     },
 )
 async def get_metadata(url: HttpUrl):
-    """Look up stored metadata for a URL. If the record does not exist,
-    return 202 and trigger background collection."""
+    """Return metadata if available, otherwise trigger background collection."""
     url = str(url)
 
     try:
@@ -94,11 +91,10 @@ async def get_metadata(url: HttpUrl):
             collected_at=record["collected_at"],
         )
 
-    # Decide whether to enqueue a new background task
     should_enqueue = False
 
     if not record and not background.is_pending(url):
-        # Never seen this URL before
+        # first time seeing this URL
         try:
             pending = PendingRecord(url=url)
             await database.upsert_record(pending.model_dump())
@@ -111,8 +107,8 @@ async def get_metadata(url: HttpUrl):
         and record.get("status") == "failed"
         and not background.is_pending(url)
     ):
-        # Previously failed — only retry after cooldown
-        age = (datetime.utcnow() - record["collected_at"]).total_seconds()
+        # retry after cooldown
+        age = (datetime.now(UTC) - record["collected_at"]).total_seconds()
         if age > background.RETRY_COOLDOWN:
             should_enqueue = True
 
